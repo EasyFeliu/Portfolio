@@ -1,73 +1,41 @@
-import cors from "@fastify/cors";
-import type { ApiErrorResponse } from "@portfolio/shared";
-import Fastify, { type FastifyError, type FastifyInstance } from "fastify";
+import cors from "cors";
+import express, { type Express } from "express";
+import morgan from "morgan";
 
 import { env, isProduction } from "./env";
 import { pruneRateLimitBuckets } from "./rate-limit";
-import { contactRoutes } from "./routes/contact";
-import { healthRoutes } from "./routes/health";
-import { projectRoutes } from "./routes/projects";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler";
+import { contactRouter } from "./routes/contact";
+import { healthRouter } from "./routes/health";
+import { projectsRouter } from "./routes/projects";
 
 const API_PREFIX = "/api";
+const JSON_BODY_LIMIT = "16kb";
 const BUCKET_PRUNE_INTERVAL_MS = 10 * 60 * 1000;
 
-/** Errores del parser de cuerpo de Fastify (JSON inválido, vacío, ilegible…). */
-const BODY_PARSER_ERROR_PREFIX = "FST_ERR_CTP_";
-
 /** Crea la aplicación sin ponerla a escuchar (útil para tests). */
-export async function buildApp(): Promise<FastifyInstance> {
-  const app = Fastify({
-    logger: { level: isProduction ? "info" : "debug" },
-    trustProxy: env.trustProxy,
-  });
+export function createApp(): Express {
+  const app = express();
 
-  await app.register(cors, {
-    origin: env.corsOrigins,
-    methods: ["GET", "POST"],
-  });
+  // Necesario para que `request.ip` use X-Forwarded-For cuando hay proxy delante.
+  app.set("trust proxy", env.trustProxy);
+  app.disable("x-powered-by");
 
-  app.setNotFoundHandler((request, reply) => {
-    const body: ApiErrorResponse = {
-      ok: false,
-      error: "NOT_FOUND",
-      message: `No existe el endpoint ${request.method} ${request.url}.`,
-    };
-    return reply.code(404).send(body);
-  });
+  app.use(morgan(isProduction ? "combined" : "dev"));
+  app.use(cors({ origin: env.corsOrigins, methods: ["GET", "POST"] }));
+  app.use(express.json({ limit: JSON_BODY_LIMIT }));
 
-  app.setErrorHandler((error: FastifyError, _request, reply) => {
-    if (error.code?.startsWith(BODY_PARSER_ERROR_PREFIX)) {
-      const body: ApiErrorResponse = {
-        ok: false,
-        error: "INVALID_JSON",
-        message: "El cuerpo de la petición debe ser JSON válido.",
-      };
-      return reply.code(400).send(body);
-    }
+  app.use(API_PREFIX, healthRouter, projectsRouter, contactRouter);
 
-    app.log.error({ error }, "error no controlado");
-    const body: ApiErrorResponse = {
-      ok: false,
-      error: "INTERNAL_ERROR",
-      message: "Error inesperado en el servidor.",
-    };
-    return reply.code(error.statusCode && error.statusCode < 500 ? error.statusCode : 500).send(body);
-  });
-
-  // Las rutas se registran después de los manejadores para que hereden ambos.
-  await app.register(
-    async (instance) => {
-      await instance.register(healthRoutes);
-      await instance.register(projectRoutes);
-      await instance.register(contactRoutes);
-    },
-    { prefix: API_PREFIX },
-  );
-
-  // Evita que el mapa del límite de peticiones crezca indefinidamente.
-  const pruneTimer = setInterval(() => pruneRateLimitBuckets(), BUCKET_PRUNE_INTERVAL_MS);
-  pruneTimer.unref();
-  app.addHook("onClose", async () => clearInterval(pruneTimer));
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
+}
+
+/** Evita que el mapa del límite de peticiones crezca indefinidamente. */
+export function startRateLimitCleanup(): NodeJS.Timeout {
+  const timer = setInterval(() => pruneRateLimitBuckets(), BUCKET_PRUNE_INTERVAL_MS);
+  timer.unref();
+  return timer;
 }

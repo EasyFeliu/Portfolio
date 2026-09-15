@@ -42,6 +42,7 @@ export type ContactSuccessResponse = {
 export type ApiErrorCode =
   | "INVALID_JSON"
   | "VALIDATION_ERROR"
+  | "PAYLOAD_TOO_LARGE"
   | "RATE_LIMITED"
   | "DATABASE_ERROR"
   | "NOT_FOUND"

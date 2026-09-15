@@ -1,22 +1,23 @@
 import type { ApiErrorResponse, ProjectsResponse } from "@portfolio/shared";
-import type { FastifyPluginAsync } from "fastify";
+import { Router } from "express";
 
+import { logger } from "../logger";
 import { listProjects } from "../projects";
 
-export const projectRoutes: FastifyPluginAsync = async (app) => {
-  app.get("/projects", async (_request, reply) => {
-    try {
-      const projects = listProjects();
-      const body: ProjectsResponse = { ok: true, count: projects.length, projects };
-      return body;
-    } catch (error) {
-      app.log.error({ error }, "projects: no se pudieron leer los proyectos");
-      const body: ApiErrorResponse = {
-        ok: false,
-        error: "DATABASE_ERROR",
-        message: "No se pudieron cargar los proyectos.",
-      };
-      return reply.code(500).send(body);
-    }
-  });
-};
+export const projectsRouter = Router();
+
+projectsRouter.get("/projects", (_request, response) => {
+  try {
+    const projects = listProjects();
+    const body: ProjectsResponse = { ok: true, count: projects.length, projects };
+    response.json(body);
+  } catch (error) {
+    logger.error("projects: no se pudieron leer los proyectos", { error: String(error) });
+    const body: ApiErrorResponse = {
+      ok: false,
+      error: "DATABASE_ERROR",
+      message: "No se pudieron cargar los proyectos.",
+    };
+    response.status(500).json(body);
+  }
+});

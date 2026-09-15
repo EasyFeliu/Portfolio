@@ -8,7 +8,7 @@ y un backend propio, separado del frontend.
 portfolio/
 ├── apps/
 │   ├── web/        Frontend  · Next.js 16 (App Router) + React 19 + Tailwind CSS v4
-│   └── api/        Backend   · Fastify 5 + SQLite (better-sqlite3)
+│   └── api/        Backend   · Express 5 + SQLite (better-sqlite3)
 ├── packages/
 │   └── shared/     Contratos compartidos: tipos y validación con Zod
 └── package.json    Monorepo con npm workspaces
@@ -87,6 +87,7 @@ sin configurar nada.
 
 | Variable | Por defecto | Descripción |
 | --- | --- | --- |
+| `NODE_ENV` | `development` | En `production` los logs salen en JSON por línea. |
 | `PORT` / `HOST` | `4000` / `0.0.0.0` | Dónde escucha la API. |
 | `DATABASE_PATH` | `data/portfolio.db` | Fichero SQLite (relativo a `apps/api` o absoluto). |
 | `CORS_ORIGINS` | `http://localhost:3000` | Orígenes autorizados, separados por comas. |
@@ -190,9 +191,10 @@ Errores:
 
 | HTTP | `error` | Cuándo ocurre |
 | --- | --- | --- |
-| `400` | `INVALID_JSON` | El cuerpo no es JSON válido o está vacío. |
+| `400` | `INVALID_JSON` | El cuerpo no es JSON válido, está vacío o no es un objeto. |
 | `400` | `VALIDATION_ERROR` | Algún campo no cumple las reglas. Incluye `errors` con el mensaje por campo. |
 | `404` | `NOT_FOUND` | El endpoint no existe. |
+| `413` | `PAYLOAD_TOO_LARGE` | El cuerpo supera el límite de 16 kB. |
 | `429` | `RATE_LIMITED` | Se superó el límite de envíos por IP. Incluye cabecera `Retry-After`. |
 | `500` | `DATABASE_ERROR` | Fallo al escribir en SQLite. |
 
@@ -212,14 +214,16 @@ Errores:
 ```
 apps/api/
   src/
-    server.ts          # arranque, apagado ordenado
-    app.ts             # instancia Fastify: CORS, errores, rutas
+    server.ts          # arranque, escucha y apagado ordenado
+    app.ts             # app de Express: logs, CORS, JSON, rutas, errores
     env.ts             # configuración con valores por defecto
+    logger.ts          # log JSON en producción, legible en desarrollo
     db.ts              # conexión SQLite, migración y semilla
     projects.ts        # consultas de proyectos
     messages.ts        # consultas de mensajes
     rate-limit.ts      # límite de peticiones en memoria
     seed-projects.ts   # proyectos de ejemplo
+    middleware/        # error-handler.ts (404 + errores)
     routes/            # health.ts · projects.ts · contact.ts
   scripts/             # seed.ts · messages.ts
   data/portfolio.db    # SQLite (no versionado)

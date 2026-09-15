@@ -31,7 +31,7 @@ export const seedProjects: SeedProject[] = [
     title: "Nimbus API",
     summary:
       "API modular para sincronizar catálogos entre tiendas online, con validación estricta, reintentos idempotentes y documentación generada automáticamente.",
-    tags: ["Node.js", "Fastify", "Zod", "Docker"],
+    tags: ["Node.js", "Express", "Zod", "Docker"],
     year: 2024,
     repoUrl: repo("nimbus-api"),
     demoUrl: null,

@@ -1,0 +1,27 @@
+# dependencias
+node_modules
+
+# builds
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+
+# base de datos local (SQLite)
+apps/api/data/*.db
+apps/api/data/*.db-shm
+apps/api/data/*.db-wal
+
+# variables de entorno (se versiona solo el ejemplo)
+.env
+.env.*
+!.env.example
+
+# logs y varios
+*.log
+npm-debug.log*
+.DS_Store
+coverage/
+next-env.d.ts
+.vercel

@@ -1,0 +1,29 @@
+{
+  "name": "portfolio-luis-feliu",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portfolio personal de Luis Feliu Gomez Polo: frontend (Next.js) y backend (Fastify + SQLite) separados",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace @portfolio/api",
+    "dev:web": "npm run dev --workspace @portfolio/web",
+    "build": "npm run build --workspace @portfolio/api && npm run build --workspace @portfolio/web",
+    "start": "concurrently -n api,web -c cyan,magenta \"npm:start:api\" \"npm:start:web\"",
+    "start:api": "npm run start --workspace @portfolio/api",
+    "start:web": "npm run start --workspace @portfolio/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:seed": "npm run db:seed --workspace @portfolio/api",
+    "db:messages": "npm run db:messages --workspace @portfolio/api"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

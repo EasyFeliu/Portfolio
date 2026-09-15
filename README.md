@@ -61,12 +61,22 @@ npm run start
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local`. No hay secretos: la única variable es la ruta
-del fichero SQLite.
+Copia `.env.example` a `.env.local`. No hay secretos y todas tienen valor por
+defecto, así que la app arranca sin configurar nada.
 
 | Variable | Por defecto | Descripción |
 | --- | --- | --- |
 | `DATABASE_PATH` | `data/portfolio.db` | Ruta (relativa a la raíz o absoluta) del fichero SQLite. |
+| `CONTACT_RATE_LIMIT_MAX` | `5` | Envíos permitidos por IP en cada ventana. |
+| `CONTACT_RATE_LIMIT_WINDOW_MINUTES` | `10` | Duración de la ventana del límite, en minutos. |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | URL pública; base de los metadatos Open Graph. |
+| `NEXT_PUBLIC_GITHUB_USER` | `EasyFeliu` | Usuario de GitHub (perfil y URLs de repos). |
+| `NEXT_PUBLIC_LINKEDIN_USER` | `luisfeliu` | Usuario de LinkedIn. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | `hola@luisfeliu.dev` | Email de contacto que se muestra en la web. |
+
+Las `NEXT_PUBLIC_*` se leen en `lib/config.ts` y viajan al navegador; la
+configuración de servidor vive junto a quien la usa (`lib/db.ts` y
+`lib/rate-limit.ts`).
 
 ---
 
@@ -147,13 +157,17 @@ Reglas de validación (compartidas entre cliente y servidor en `lib/schemas.ts`)
 | `email` | email válido, máx. 160 caracteres (se normaliza a minúsculas) |
 | `message` | 10–2000 caracteres |
 
+Los límites están en `CONTACT_LIMITS` (`lib/schemas.ts`) y son la única fuente de
+verdad: los usan el esquema Zod, los `maxLength` del formulario y el contador de
+caracteres.
+
 Errores posibles:
 
 | Código HTTP | `error` | Cuándo ocurre |
 | --- | --- | --- |
 | `400` | `INVALID_JSON` | El cuerpo no es JSON válido. |
 | `400` | `VALIDATION_ERROR` | Algún campo no cumple las reglas. Incluye `errors` con el mensaje por campo. |
-| `429` | `RATE_LIMITED` | Más de 5 envíos en 10 minutos desde la misma IP. |
+| `429` | `RATE_LIMITED` | Se ha superado el límite de envíos por IP (configurable, por defecto 5 cada 10 minutos). Incluye cabecera `Retry-After`. |
 | `500` | `DATABASE_ERROR` | Fallo al escribir en SQLite. |
 
 Ejemplo de error de validación:
@@ -187,15 +201,19 @@ components/
   reveal.tsx             # animación de aparición al hacer scroll
   theme-toggle.tsx       # botón claro/oscuro
   use-theme.ts           # estado del tema (leído del DOM)
+  social-icon.tsx        # mapa exhaustivo red social → icono
+  section-heading.tsx
   icons.tsx
 lib/
-  content.ts             # textos del sitio (editable)
+  config.ts              # configuración pública (NEXT_PUBLIC_*)
+  content.ts             # todos los textos e ids de sección
   db.ts                  # conexión SQLite, migración y semilla
   messages.ts            # acceso a mensajes de contacto
   projects.ts            # acceso a proyectos
-  schemas.ts             # esquemas Zod compartidos
+  schemas.ts             # esquemas Zod + límites compartidos
   rate-limit.ts          # límite de peticiones en memoria
-  theme.ts               # clave de almacenamiento + script anti-parpadeo
+  theme.ts               # tema: clave, colores meta y script anti-parpadeo
+  types.ts               # tipos compartidos (Project, respuestas de la API)
 data/
   seed-projects.ts       # proyectos de ejemplo
   portfolio.db           # SQLite (no versionado)
@@ -218,12 +236,23 @@ hace falta un paso de migración manual.
 
 ---
 
-## Personalizar el contenido
+## Qué personalizar
 
-- **Textos, redes y experiencia:** `lib/content.ts`.
-- **Proyectos:** `data/seed-projects.ts` y después `npm run db:seed`.
-- **Colores, sombras y tipografía:** variables CSS en `app/globals.css`
-  (`:root` para el modo claro y `.dark` para el oscuro).
+El contenido de ejemplo está marcado con el comentario `PLACEHOLDER` para que sea
+fácil de localizar (`grep -rn PLACEHOLDER lib data`). Checklist:
+
+1. **Identidad y enlaces** → `.env.local`: `NEXT_PUBLIC_GITHUB_USER`,
+   `NEXT_PUBLIC_LINKEDIN_USER`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_SITE_URL`.
+   Ningún perfil ni email está escrito a mano en los componentes.
+2. **Textos** → `lib/content.ts`: bio, cifras del hero, trayectoria, skills y
+   todas las etiquetas de interfaz (objeto `copy`).
+3. **Proyectos** → `data/seed-projects.ts` y después `npm run db:seed`. Las URLs
+   de repositorio se construyen desde el usuario de GitHub configurado; pon
+   `demoUrl: null` mientras no haya demo (la tarjeta lo indica sola).
+4. **Diseño** → `app/globals.css`: los design tokens están en `:root` (modo claro)
+   y `.dark` (oscuro): color de acento, superficies, hairlines, sombras, colores de
+   estado (`--danger`, `--success`) y altura de la cabecera (`--header-h`). Los
+   componentes solo usan tokens, no colores literales.
 
 ---
 

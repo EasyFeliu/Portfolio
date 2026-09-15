@@ -1,15 +1,15 @@
 import { Reveal } from "@/components/reveal";
 import { SectionHeading } from "@/components/section-heading";
-import { experience, skillGroups } from "@/lib/content";
+import { SECTION_IDS, copy, experience, skillGroups } from "@/lib/content";
 
 export function Experience() {
   return (
-    <section id="experiencia" className="py-20 sm:py-28 lg:py-32">
+    <section id={SECTION_IDS.experience} className="py-20 sm:py-28 lg:py-32">
       <div className="container-page">
         <SectionHeading
-          eyebrow="Experiencia"
-          title="Trayectoria y herramientas."
-          description="Seis años construyendo producto en equipos pequeños, donde hay que tocar tanto la interfaz como la infraestructura."
+          eyebrow={copy.experience.eyebrow}
+          title={copy.experience.title}
+          description={copy.experience.description}
         />
 
         <div className="mt-12 grid gap-12 lg:grid-cols-[1.25fr_1fr] lg:gap-16">

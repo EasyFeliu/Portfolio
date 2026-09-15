@@ -1,5 +1,5 @@
-import { GithubIcon, LinkedinIcon } from "@/components/icons";
-import { profile, socialLinks } from "@/lib/content";
+import { SocialIcon } from "@/components/social-icon";
+import { SECTION_IDS, copy, profile, sectionHref, socialLinks } from "@/lib/content";
 
 export function SiteFooter() {
   return (
@@ -8,34 +8,30 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-medium">{profile.name}</p>
           <p className="mt-1 text-sm text-muted">
-            © {new Date().getFullYear()} · Hecho con Next.js y SQLite
+            © {new Date().getFullYear()} · {copy.footer.madeWith}
           </p>
         </div>
 
         <ul className="flex items-center gap-2">
           {socialLinks.map((social) => (
-            <li key={social.label}>
+            <li key={social.network}>
               <a
                 href={social.href}
                 target="_blank"
                 rel="noreferrer noopener"
-                aria-label={`${social.label} (se abre en una pestaña nueva)`}
+                aria-label={`${social.label} (${copy.openInNewTab})`}
                 className="inline-flex size-10 items-center justify-center rounded-full border border-hairline text-muted transition-colors hover:bg-subtle hover:text-ink"
               >
-                {social.label === "GitHub" ? (
-                  <GithubIcon className="size-[1.1rem]" />
-                ) : (
-                  <LinkedinIcon className="size-[1.1rem]" />
-                )}
+                <SocialIcon network={social.network} className="size-[1.1rem]" />
               </a>
             </li>
           ))}
           <li>
             <a
-              href="#inicio"
+              href={sectionHref(SECTION_IDS.hero)}
               className="ml-1 inline-flex items-center rounded-full px-3 py-2 text-sm text-muted transition-colors hover:text-ink"
             >
-              Volver arriba
+              {copy.footer.backToTop}
             </a>
           </li>
         </ul>

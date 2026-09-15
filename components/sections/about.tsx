@@ -1,21 +1,14 @@
-import { GithubIcon, LinkedinIcon, MailIcon } from "@/components/icons";
+import { MailIcon } from "@/components/icons";
 import { Reveal } from "@/components/reveal";
 import { SectionHeading } from "@/components/section-heading";
-import { profile, socialLinks } from "@/lib/content";
-
-const socialIcons = {
-  GitHub: GithubIcon,
-  LinkedIn: LinkedinIcon,
-} as const;
+import { SocialIcon } from "@/components/social-icon";
+import { SECTION_IDS, copy, profile, socialLinks } from "@/lib/content";
 
 export function About() {
   return (
-    <section id="sobre-mi" className="py-20 sm:py-28 lg:py-32">
+    <section id={SECTION_IDS.about} className="py-20 sm:py-28 lg:py-32">
       <div className="container-page">
-        <SectionHeading
-          eyebrow="Sobre mí"
-          title="Ingeniero de producto, de la idea al detalle final."
-        />
+        <SectionHeading eyebrow={copy.about.eyebrow} title={copy.about.title} />
 
         <div className="mt-12 grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-start lg:gap-14">
           <div className="flex flex-col gap-5">
@@ -44,18 +37,12 @@ export function About() {
               </div>
 
               <dl className="mt-6 flex flex-col gap-3 text-sm">
-                <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-muted">Ubicación</dt>
-                  <dd className="text-right font-medium">{profile.location}</dd>
-                </div>
-                <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-muted">Enfoque</dt>
-                  <dd className="text-right font-medium">Web · Producto · DX</dd>
-                </div>
-                <div className="flex items-baseline justify-between gap-4">
-                  <dt className="text-muted">Idiomas</dt>
-                  <dd className="text-right font-medium">Español · Inglés</dd>
-                </div>
+                {copy.about.facts.map((fact) => (
+                  <div key={fact.term} className="flex items-baseline justify-between gap-4">
+                    <dt className="text-muted">{fact.term}</dt>
+                    <dd className="text-right font-medium">{fact.value}</dd>
+                  </div>
+                ))}
               </dl>
 
               <div className="mt-6 flex flex-col gap-2 border-t border-hairline pt-5">
@@ -67,24 +54,22 @@ export function About() {
                   <span className="truncate">{profile.email}</span>
                 </a>
 
-                {socialLinks.map((social) => {
-                  const IconComponent = socialIcons[social.label as keyof typeof socialIcons];
-                  return (
-                    <a
-                      key={social.label}
-                      href={social.href}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm transition-colors hover:bg-subtle"
-                    >
-                      {IconComponent ? (
-                        <IconComponent className="size-[1.1rem] text-muted transition-colors group-hover:text-accent" />
-                      ) : null}
-                      <span className="truncate">{social.handle}</span>
-                      <span className="sr-only">{`Perfil de ${social.label} (se abre en una pestaña nueva)`}</span>
-                    </a>
-                  );
-                })}
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.network}
+                    href={social.href}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="group flex items-center gap-3 rounded-xl px-2 py-2 text-sm transition-colors hover:bg-subtle"
+                  >
+                    <SocialIcon
+                      network={social.network}
+                      className="size-[1.1rem] text-muted transition-colors group-hover:text-accent"
+                    />
+                    <span className="truncate">{social.handle}</span>
+                    <span className="sr-only">{`${social.label} (${copy.openInNewTab})`}</span>
+                  </a>
+                ))}
               </div>
             </div>
           </Reveal>

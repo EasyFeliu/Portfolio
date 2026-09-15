@@ -10,6 +10,20 @@ type GlobalWithBuckets = typeof globalThis & {
 const globalWithBuckets = globalThis as GlobalWithBuckets;
 const buckets = (globalWithBuckets.__portfolioRateLimit ??= new Map<string, Bucket>());
 
+const DEFAULT_MAX_REQUESTS = 5;
+const DEFAULT_WINDOW_MINUTES = 10;
+
+function positiveIntFromEnv(name: string, fallback: number): number {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+/** Configuración del límite de peticiones (solo servidor). */
+export const rateLimitConfig = {
+  maxRequests: positiveIntFromEnv("CONTACT_RATE_LIMIT_MAX", DEFAULT_MAX_REQUESTS),
+  windowMinutes: positiveIntFromEnv("CONTACT_RATE_LIMIT_WINDOW_MINUTES", DEFAULT_WINDOW_MINUTES),
+} as const;
+
 export type RateLimitResult = {
   allowed: boolean;
   remaining: number;
@@ -18,9 +32,13 @@ export type RateLimitResult = {
 
 /**
  * Límite de peticiones en memoria (ventana fija). Suficiente para una sola
- * instancia; para varios procesos haría falta Redis o similar.
+ * instancia; con varios procesos haría falta un almacén compartido (Redis…).
  */
-export function rateLimit(key: string, limit = 5, windowMs = 10 * 60 * 1000): RateLimitResult {
+export function rateLimit(
+  key: string,
+  limit = rateLimitConfig.maxRequests,
+  windowMs = rateLimitConfig.windowMinutes * 60 * 1000,
+): RateLimitResult {
   const now = Date.now();
   const bucket = buckets.get(key);
 

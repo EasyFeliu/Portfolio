@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 
+import { siteConfig } from "@/lib/config";
 import { profile } from "@/lib/content";
-import { themeInitScript } from "@/lib/theme";
+import { THEME_COLORS, themeInitScript } from "@/lib/theme";
 
 import "./globals.css";
 
@@ -12,22 +13,27 @@ const inter = Inter({
   display: "swap",
 });
 
+const title = `${profile.name} · ${profile.role}`;
+const siteName = `Portfolio de ${profile.shortName}`;
+
 export const metadata: Metadata = {
-  title: `${profile.name} · ${profile.role}`,
+  metadataBase: new URL(siteConfig.url),
+  title,
   description: profile.tagline,
-  applicationName: `Portfolio de ${profile.shortName}`,
-  authors: [{ name: profile.name, url: "https://github.com/EasyFeliu" }],
+  applicationName: siteName,
+  authors: [{ name: profile.name, url: siteConfig.github.profileUrl }],
   keywords: ["portfolio", "software engineer", "Next.js", "TypeScript", profile.name],
   openGraph: {
     type: "website",
     locale: "es_ES",
-    title: `${profile.name} · ${profile.role}`,
+    url: siteConfig.url,
+    title,
     description: profile.tagline,
-    siteName: `Portfolio de ${profile.shortName}`,
+    siteName,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${profile.name} · ${profile.role}`,
+    title,
     description: profile.tagline,
   },
 };
@@ -36,8 +42,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fbfbfd" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
 };
 

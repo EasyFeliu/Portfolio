@@ -1,19 +1,19 @@
 import { ArrowDownIcon } from "@/components/icons";
 import { Reveal } from "@/components/reveal";
-import { profile } from "@/lib/content";
+import { SECTION_IDS, copy, profile, sectionHref } from "@/lib/content";
 
 export function Hero() {
   return (
-    <section id="inicio" className="relative isolate overflow-hidden pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-44">
+    <section
+      id={SECTION_IDS.hero}
+      className="relative isolate overflow-hidden pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-44"
+    >
       <div className="hero-glow" aria-hidden="true" />
 
       <div className="container-page flex flex-col items-center text-center">
         <Reveal>
           <p className="inline-flex items-center gap-2 rounded-[var(--radius-pill)] border border-hairline bg-surface/70 px-3.5 py-1.5 text-[0.8125rem] font-medium text-muted shadow-soft">
-            <span
-              aria-hidden="true"
-              className="size-2 rounded-full bg-emerald-500 shadow-[0_0_0_3px_rgb(16_185_129/0.18)]"
-            />
+            <span aria-hidden="true" className="status-dot" />
             {profile.availability}
           </p>
         </Reveal>
@@ -38,11 +38,11 @@ export function Hero() {
 
         <Reveal delay={300} className="mt-9 w-full">
           <div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-            <a href="#proyectos" className="btn btn-primary">
-              Ver proyectos
+            <a href={sectionHref(SECTION_IDS.projects)} className="btn btn-primary">
+              {copy.hero.primaryCta}
             </a>
-            <a href="#contacto" className="btn btn-secondary">
-              Contactar
+            <a href={sectionHref(SECTION_IDS.contact)} className="btn btn-secondary">
+              {copy.hero.secondaryCta}
             </a>
           </div>
         </Reveal>
@@ -66,8 +66,8 @@ export function Hero() {
         </Reveal>
 
         <a
-          href="#sobre-mi"
-          aria-label="Ir a la sección Sobre mí"
+          href={sectionHref(SECTION_IDS.about)}
+          aria-label={copy.hero.scrollHint}
           className="mt-14 inline-flex size-11 items-center justify-center rounded-full border border-hairline text-muted transition-colors hover:bg-subtle hover:text-ink sm:mt-20"
         >
           <ArrowDownIcon className="size-5" />

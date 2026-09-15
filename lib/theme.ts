@@ -3,6 +3,15 @@ export type Theme = "light" | "dark";
 export const THEME_STORAGE_KEY = "portfolio-theme";
 
 /**
+ * Color de la barra del navegador en móvil. Debe coincidir con `--canvas`
+ * de `app/globals.css` (el navegador lo lee de la etiqueta meta, no del CSS).
+ */
+export const THEME_COLORS: Record<Theme, string> = {
+  light: "#fbfbfd",
+  dark: "#000000",
+};
+
+/**
  * Script que se ejecuta antes del primer paint para aplicar el tema guardado
  * (o el del sistema) y evitar el destello de color al cargar la página.
  */

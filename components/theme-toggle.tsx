@@ -2,11 +2,12 @@
 
 import { MoonIcon, SunIcon } from "@/components/icons";
 import { useTheme } from "@/components/use-theme";
+import { copy } from "@/lib/content";
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
-  const label = isDark ? "Activar modo claro" : "Activar modo oscuro";
+  const label = isDark ? copy.theme.toLight : copy.theme.toDark;
 
   return (
     <button

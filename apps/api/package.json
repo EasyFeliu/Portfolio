@@ -1,0 +1,31 @@
+{
+  "name": "@portfolio/api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend del portfolio: API REST con Fastify y SQLite",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "esbuild src/server.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/server.cjs --external:better-sqlite3",
+    "start": "node dist/server.cjs",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:messages": "tsx scripts/messages.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "^11.3.0",
+    "@portfolio/shared": "*",
+    "better-sqlite3": "^13.0.3",
+    "fastify": "^5.12.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^20",
+    "esbuild": "^0.28.2",
+    "eslint": "^9",
+    "tsx": "^4.23.13",
+    "typescript": "^5",
+    "typescript-eslint": "^8"
+  }
+}

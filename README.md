@@ -1,96 +1,125 @@
 # Portfolio · Luis Feliu Gomez Polo
 
 Portfolio personal de **Luis Feliu Gomez Polo** ([@EasyFeliu](https://github.com/EasyFeliu)):
-una web de una sola página con estética inspirada en Apple, diseño **mobile first** y
-backend real (API + base de datos), no solo HTML estático.
+una web de una sola página con estética inspirada en Apple, diseño **mobile first**
+y un backend propio, separado del frontend.
 
-- **Frontend:** Next.js 16 (App Router) + React 19 + TypeScript + Tailwind CSS v4.
-- **Backend:** Route Handlers de Next.js con validación mediante Zod.
-- **Base de datos:** SQLite con `better-sqlite3` (sin servicios externos).
-- **Extras:** modo claro/oscuro persistente, animaciones al hacer scroll, formulario
-  de contacto que guarda los mensajes y límite de peticiones básico.
+```
+portfolio/
+├── apps/
+│   ├── web/        Frontend  · Next.js 16 (App Router) + React 19 + Tailwind CSS v4
+│   └── api/        Backend   · Fastify 5 + SQLite (better-sqlite3)
+├── packages/
+│   └── shared/     Contratos compartidos: tipos y validación con Zod
+└── package.json    Monorepo con npm workspaces
+```
+
+- **`apps/web`** no contiene lógica de servidor ni acceso a datos: pinta la
+  interfaz y habla con el backend a través de `lib/api.ts`.
+- **`apps/api`** es un servicio HTTP independiente (se puede arrancar, probar y
+  desplegar por su cuenta) con su propia base de datos y configuración.
+- **`packages/shared`** evita que los dos lados se desincronicen: tipos de la API,
+  esquema Zod del formulario y límites de los campos viven una sola vez.
+
+En desarrollo el navegador siempre llama a `/api/...` en el mismo origen y Next
+hace de proxy hacia el backend (`API_URL`), así que no hay CORS ni URLs absolutas
+repartidas por el código del cliente. Si prefieres llamar al backend directamente,
+define `NEXT_PUBLIC_API_BASE_URL` y añade el origen del frontend a `CORS_ORIGINS`.
 
 ---
 
 ## Puesta en marcha
 
-Requisitos: **Node.js 20 o superior** y npm.
+Requisitos: **Node.js 20 o superior** y npm 10+ (workspaces).
 
 ```bash
-# 1. Instalar dependencias
+# 1. Instalar dependencias de los tres paquetes
 npm install
 
-# 2. (Opcional) configurar variables de entorno
-cp .env.example .env.local
-
-# 3. Cargar los proyectos de ejemplo en la base de datos
+# 2. Cargar los proyectos de ejemplo en SQLite
 npm run db:seed
 
-# 4. Arrancar en modo desarrollo
+# 3. Arrancar backend (:4000) y frontend (:3000) a la vez
 npm run dev
 ```
 
-La web queda disponible en <http://localhost:3000>.
+La web queda en <http://localhost:3000> y la API en <http://localhost:4000>.
 
-> La base de datos SQLite se crea sola en `data/portfolio.db` la primera vez que
-> se ejecuta la app, y si está vacía se rellena con los proyectos de ejemplo.
-> `npm run db:seed` sirve para volver a sincronizarlos cuando los edites.
+Para arrancar solo una parte: `npm run dev:api` o `npm run dev:web`.
+
+> La base de datos se crea sola en `apps/api/data/portfolio.db` al arrancar el
+> backend, y si está vacía se rellena con los proyectos de ejemplo. `npm run db:seed`
+> sirve para volver a sincronizarlos cuando los edites.
 
 ### Producción
 
 ```bash
-npm run build
-npm run start
+npm run build   # esbuild para la API + next build para la web
+npm run start   # node dist/server.cjs + next start
 ```
 
 ---
 
-## Scripts disponibles
+## Scripts
+
+Desde la raíz (se reenvían al workspace correspondiente):
 
 | Script | Descripción |
 | --- | --- |
-| `npm run dev` | Servidor de desarrollo con recarga en caliente. |
-| `npm run build` | Compila la aplicación para producción. |
-| `npm run start` | Sirve la build de producción. |
-| `npm run lint` | ESLint (configuración de Next.js). |
-| `npm run typecheck` | Comprobación de tipos con TypeScript. |
-| `npm run db:seed` | Inserta o actualiza los proyectos de `data/seed-projects.ts`. Acepta `-- --reset` para vaciar la tabla antes. |
-| `npm run db:messages` | Muestra por consola los mensajes de contacto recibidos. |
+| `npm run dev` | Backend y frontend juntos, con recarga en caliente. |
+| `npm run dev:api` / `npm run dev:web` | Solo uno de los dos. |
+| `npm run build` | Compila la API (esbuild) y la web (Next.js). |
+| `npm run start` | Arranca ambos en modo producción. |
+| `npm run lint` | ESLint en todos los workspaces. |
+| `npm run typecheck` | TypeScript en todos los workspaces. |
+| `npm run db:seed` | Inserta o actualiza los proyectos. Acepta `-- --reset`. |
+| `npm run db:messages` | Muestra los mensajes de contacto recibidos. |
 
 ---
 
 ## Variables de entorno
 
-Copia `.env.example` a `.env.local`. No hay secretos y todas tienen valor por
-defecto, así que la app arranca sin configurar nada.
+Cada app tiene su propio `.env.example`; cópialo a `.env.local` si quieres cambiar
+algo. No hay secretos y todo tiene valor por defecto, así que el proyecto arranca
+sin configurar nada.
+
+**Backend — `apps/api/.env.example`**
 
 | Variable | Por defecto | Descripción |
 | --- | --- | --- |
-| `DATABASE_PATH` | `data/portfolio.db` | Ruta (relativa a la raíz o absoluta) del fichero SQLite. |
-| `CONTACT_RATE_LIMIT_MAX` | `5` | Envíos permitidos por IP en cada ventana. |
-| `CONTACT_RATE_LIMIT_WINDOW_MINUTES` | `10` | Duración de la ventana del límite, en minutos. |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | URL pública; base de los metadatos Open Graph. |
-| `NEXT_PUBLIC_GITHUB_USER` | `EasyFeliu` | Usuario de GitHub (perfil y URLs de repos). |
-| `NEXT_PUBLIC_LINKEDIN_USER` | `luisfeliu` | Usuario de LinkedIn. |
-| `NEXT_PUBLIC_CONTACT_EMAIL` | `hola@luisfeliu.dev` | Email de contacto que se muestra en la web. |
+| `PORT` / `HOST` | `4000` / `0.0.0.0` | Dónde escucha la API. |
+| `DATABASE_PATH` | `data/portfolio.db` | Fichero SQLite (relativo a `apps/api` o absoluto). |
+| `CORS_ORIGINS` | `http://localhost:3000` | Orígenes autorizados, separados por comas. |
+| `TRUST_PROXY` | `true` | Leer la IP real de `X-Forwarded-For`. |
+| `CONTACT_RATE_LIMIT_MAX` | `5` | Envíos permitidos por IP y ventana. |
+| `CONTACT_RATE_LIMIT_WINDOW_MINUTES` | `10` | Duración de la ventana. |
+| `GITHUB_USER` | `EasyFeliu` | Usuario con el que se construyen las URLs de los proyectos. |
 
-Las `NEXT_PUBLIC_*` se leen en `lib/config.ts` y viajan al navegador; la
-configuración de servidor vive junto a quien la usa (`lib/db.ts` y
-`lib/rate-limit.ts`).
+**Frontend — `apps/web/.env.example`**
+
+| Variable | Por defecto | Descripción |
+| --- | --- | --- |
+| `API_URL` | `http://localhost:4000` | Backend al que Next redirige `/api/*`. |
+| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | URL pública; base de los metadatos Open Graph. |
+| `NEXT_PUBLIC_API_BASE_URL` | *(vacío)* | Vacío = proxy de Next. Con valor, el navegador llama al backend directamente. |
+| `NEXT_PUBLIC_GITHUB_USER` | `EasyFeliu` | Perfil de GitHub que se muestra. |
+| `NEXT_PUBLIC_LINKEDIN_USER` | `luisfeliu` | Perfil de LinkedIn. |
+| `NEXT_PUBLIC_CONTACT_EMAIL` | `hola@luisfeliu.dev` | Email de contacto. |
+
+El backend carga `.env.local` y `.env` al arrancar (`process.loadEnvFile`); las
+variables ya presentes en el entorno tienen prioridad.
 
 ---
 
 ## API
 
-Todos los endpoints devuelven JSON. Los errores siguen el formato
-`{ "ok": false, "error": "CODIGO", "message": "texto legible" }`.
+Servida por `apps/api` bajo el prefijo `/api`. Todas las respuestas son JSON y los
+errores comparten formato: `{ "ok": false, "error": "CODIGO", "message": "texto legible" }`.
 
 ### `GET /api/health`
 
-Estado del servicio y de la base de datos.
-
 ```bash
-curl http://localhost:3000/api/health
+curl http://localhost:4000/api/health
 ```
 
 ```json
@@ -105,12 +134,11 @@ curl http://localhost:3000/api/health
 
 ### `GET /api/projects`
 
-Proyectos ordenados por destacados y posición. Es la fuente de datos de la
-sección **Proyectos** de la web (se cargan desde el cliente, con estado de carga,
-error y reintento).
+Proyectos ordenados por destacados y posición. Es la fuente de datos de la sección
+**Proyectos**, que los pide desde el cliente con estado de carga, error y reintento.
 
 ```bash
-curl http://localhost:3000/api/projects
+curl http://localhost:4000/api/projects
 ```
 
 ```json
@@ -125,7 +153,7 @@ curl http://localhost:3000/api/projects
       "summary": "Panel de analítica en tiempo real…",
       "tags": ["Next.js", "TypeScript"],
       "year": 2025,
-      "repoUrl": "https://github.com/EasyFeliu",
+      "repoUrl": "https://github.com/EasyFeliu/atlas-analytics",
       "demoUrl": null,
       "featured": true
     }
@@ -135,10 +163,8 @@ curl http://localhost:3000/api/projects
 
 ### `POST /api/contact`
 
-Valida y guarda un mensaje de contacto.
-
 ```bash
-curl -X POST http://localhost:3000/api/contact \
+curl -X POST http://localhost:4000/api/contact \
   -H 'Content-Type: application/json' \
   -d '{"name":"Ana Ruiz","email":"ana@example.com","message":"Hola Luis, me gustaría comentarte un proyecto."}'
 ```
@@ -149,7 +175,7 @@ Respuesta correcta (`201`):
 { "ok": true, "id": 1, "message": "¡Gracias! He recibido tu mensaje y te responderé pronto." }
 ```
 
-Reglas de validación (compartidas entre cliente y servidor en `lib/schemas.ts`):
+Validación (misma para cliente y servidor, definida en `packages/shared/src/contact.ts`):
 
 | Campo | Regla |
 | --- | --- |
@@ -157,20 +183,18 @@ Reglas de validación (compartidas entre cliente y servidor en `lib/schemas.ts`)
 | `email` | email válido, máx. 160 caracteres (se normaliza a minúsculas) |
 | `message` | 10–2000 caracteres |
 
-Los límites están en `CONTACT_LIMITS` (`lib/schemas.ts`) y son la única fuente de
-verdad: los usan el esquema Zod, los `maxLength` del formulario y el contador de
-caracteres.
+Los números viven una sola vez en `CONTACT_LIMITS` y los usan el esquema Zod, los
+`maxLength` del formulario y el contador de caracteres.
 
-Errores posibles:
+Errores:
 
-| Código HTTP | `error` | Cuándo ocurre |
+| HTTP | `error` | Cuándo ocurre |
 | --- | --- | --- |
-| `400` | `INVALID_JSON` | El cuerpo no es JSON válido. |
+| `400` | `INVALID_JSON` | El cuerpo no es JSON válido o está vacío. |
 | `400` | `VALIDATION_ERROR` | Algún campo no cumple las reglas. Incluye `errors` con el mensaje por campo. |
-| `429` | `RATE_LIMITED` | Se ha superado el límite de envíos por IP (configurable, por defecto 5 cada 10 minutos). Incluye cabecera `Retry-After`. |
+| `404` | `NOT_FOUND` | El endpoint no existe. |
+| `429` | `RATE_LIMITED` | Se superó el límite de envíos por IP. Incluye cabecera `Retry-After`. |
 | `500` | `DATABASE_ERROR` | Fallo al escribir en SQLite. |
-
-Ejemplo de error de validación:
 
 ```json
 {
@@ -183,43 +207,43 @@ Ejemplo de error de validación:
 
 ---
 
-## Estructura del proyecto
+## Estructura
 
 ```
-app/
-  api/
-    contact/route.ts     # POST /api/contact  (validación + persistencia)
-    health/route.ts      # GET  /api/health
-    projects/route.ts    # GET  /api/projects
-  globals.css            # design tokens + estilos base
-  layout.tsx             # metadatos, fuente Inter, script de tema
-  page.tsx               # composición de la página
-components/
-  sections/              # hero, sobre mí, proyectos, experiencia, contacto
-  site-header.tsx        # cabecera fija con menú móvil
-  site-footer.tsx
-  reveal.tsx             # animación de aparición al hacer scroll
-  theme-toggle.tsx       # botón claro/oscuro
-  use-theme.ts           # estado del tema (leído del DOM)
-  social-icon.tsx        # mapa exhaustivo red social → icono
-  section-heading.tsx
-  icons.tsx
-lib/
-  config.ts              # configuración pública (NEXT_PUBLIC_*)
-  content.ts             # todos los textos e ids de sección
-  db.ts                  # conexión SQLite, migración y semilla
-  messages.ts            # acceso a mensajes de contacto
-  projects.ts            # acceso a proyectos
-  schemas.ts             # esquemas Zod + límites compartidos
-  rate-limit.ts          # límite de peticiones en memoria
-  theme.ts               # tema: clave, colores meta y script anti-parpadeo
-  types.ts               # tipos compartidos (Project, respuestas de la API)
-data/
-  seed-projects.ts       # proyectos de ejemplo
-  portfolio.db           # SQLite (no versionado)
-scripts/
-  seed.ts                # npm run db:seed
-  messages.ts            # npm run db:messages
+apps/api/
+  src/
+    server.ts          # arranque, apagado ordenado
+    app.ts             # instancia Fastify: CORS, errores, rutas
+    env.ts             # configuración con valores por defecto
+    db.ts              # conexión SQLite, migración y semilla
+    projects.ts        # consultas de proyectos
+    messages.ts        # consultas de mensajes
+    rate-limit.ts      # límite de peticiones en memoria
+    seed-projects.ts   # proyectos de ejemplo
+    routes/            # health.ts · projects.ts · contact.ts
+  scripts/             # seed.ts · messages.ts
+  data/portfolio.db    # SQLite (no versionado)
+
+apps/web/
+  app/                 # layout, página y estilos globales (design tokens)
+  components/
+    sections/          # hero, sobre mí, proyectos, experiencia, contacto
+    site-header.tsx    # cabecera fija con menú móvil
+    site-footer.tsx
+    reveal.tsx         # aparición al hacer scroll
+    theme-toggle.tsx   # claro/oscuro
+    use-theme.ts
+    social-icon.tsx
+  lib/
+    api.ts             # única capa que llama al backend
+    config.ts          # configuración pública (NEXT_PUBLIC_*)
+    content.ts         # todos los textos e ids de sección
+    theme.ts
+
+packages/shared/src/
+  contact.ts           # esquema Zod + CONTACT_LIMITS
+  types.ts             # Project, respuestas y códigos de error
+  github.ts            # helpers de URLs de GitHub
 ```
 
 ### Base de datos
@@ -231,28 +255,28 @@ projects(id, slug UNIQUE, title, summary, tags JSON, year,
 contact_messages(id, name, email, message, created_at)
 ```
 
-El esquema se crea automáticamente al abrir la conexión (`lib/db.ts`), así que no
-hace falta un paso de migración manual.
+El esquema se crea al abrir la conexión (`apps/api/src/db.ts`), así que no hay
+paso de migración manual.
 
 ---
 
 ## Qué personalizar
 
-El contenido de ejemplo está marcado con el comentario `PLACEHOLDER` para que sea
-fácil de localizar (`grep -rn PLACEHOLDER lib data`). Checklist:
+El contenido de ejemplo está marcado con `PLACEHOLDER`
+(`grep -rn PLACEHOLDER apps packages`). Checklist:
 
-1. **Identidad y enlaces** → `.env.local`: `NEXT_PUBLIC_GITHUB_USER`,
+1. **Identidad y enlaces** → `apps/web/.env.local`: `NEXT_PUBLIC_GITHUB_USER`,
    `NEXT_PUBLIC_LINKEDIN_USER`, `NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_SITE_URL`.
    Ningún perfil ni email está escrito a mano en los componentes.
-2. **Textos** → `lib/content.ts`: bio, cifras del hero, trayectoria, skills y
-   todas las etiquetas de interfaz (objeto `copy`).
-3. **Proyectos** → `data/seed-projects.ts` y después `npm run db:seed`. Las URLs
-   de repositorio se construyen desde el usuario de GitHub configurado; pon
-   `demoUrl: null` mientras no haya demo (la tarjeta lo indica sola).
-4. **Diseño** → `app/globals.css`: los design tokens están en `:root` (modo claro)
-   y `.dark` (oscuro): color de acento, superficies, hairlines, sombras, colores de
-   estado (`--danger`, `--success`) y altura de la cabecera (`--header-h`). Los
-   componentes solo usan tokens, no colores literales.
+2. **Textos** → `apps/web/lib/content.ts`: bio, cifras del hero, trayectoria,
+   skills y todas las etiquetas de interfaz (objeto `copy`).
+3. **Proyectos** → `apps/api/src/seed-projects.ts` y después `npm run db:seed`.
+   Las URLs de repositorio se construyen con `GITHUB_USER`; deja `demoUrl: null`
+   mientras no haya demo (la tarjeta lo indica sola).
+4. **Diseño** → `apps/web/app/globals.css`: los design tokens están en `:root`
+   (modo claro) y `.dark` (oscuro): acento, superficies, hairlines, sombras,
+   colores de estado (`--danger`, `--success`) y altura de cabecera (`--header-h`).
+   Los componentes solo usan tokens, no colores literales.
 
 ---
 
@@ -264,22 +288,24 @@ fácil de localizar (`grep -rn PLACEHOLDER lib data`). Checklist:
   (San Francisco en Apple), titulares grandes con tracking negativo, mucho aire,
   hairlines de 1 px, sombras suaves, cabecera con efecto cristal y un único color
   de acento.
-- **Modo claro/oscuro:** se respeta la preferencia del sistema, se puede cambiar a
+- **Modo claro/oscuro:** respeta la preferencia del sistema, se puede cambiar a
   mano y la elección se guarda en `localStorage` (sin parpadeo al recargar).
 - **Accesibilidad:** HTML semántico, enlace «Saltar al contenido», foco visible,
-  `aria-*` en el menú y en el formulario, errores asociados a cada campo,
-  mensajes de estado con `aria-live` y respeto por `prefers-reduced-motion`.
+  `aria-*` en menú y formulario, errores asociados a cada campo, mensajes de estado
+  con `aria-live` y respeto por `prefers-reduced-motion`.
 
 ---
 
 ## Notas de despliegue
 
-SQLite necesita un sistema de ficheros persistente y escribible. Funciona sin
-cambios en un VPS, en Docker con volumen o en plataformas con disco persistente
-(Fly.io, Railway, Render). En entornos serverless de solo lectura (como Vercel)
-habría que sustituir `better-sqlite3` por una base de datos gestionada
-(Postgres, Turso, Neon…): basta con reescribir `lib/db.ts`, `lib/projects.ts` y
-`lib/messages.ts`, ya que el resto de la aplicación solo habla con esas funciones.
+Los dos servicios se despliegan por separado:
+
+- **`apps/api`** necesita un sistema de ficheros persistente para SQLite: VPS,
+  Docker con volumen o plataformas con disco (Fly.io, Railway, Render).
+  Para cambiar de base de datos solo hay que reescribir `db.ts`, `projects.ts` y
+  `messages.ts`: el resto del backend solo habla con esas funciones.
+- **`apps/web`** funciona en cualquier hosting de Next.js; define `API_URL`
+  apuntando al backend desplegado.
 
 No se envían emails: los mensajes se guardan en la base de datos y se consultan
 con `npm run db:messages`.
